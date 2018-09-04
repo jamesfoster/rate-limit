@@ -2,15 +2,15 @@ package main
 
 import (
 	"bufio"
-	"os"
+	"errors"
+	"flag"
+	"fmt"
 	"io"
-	"time"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
-	"flag"
-	"errors"
-	"fmt"
+	"time"
 )
 
 type unit interface{}
@@ -18,7 +18,7 @@ type unit interface{}
 func main() {
 	var port *int
 
-	initialRate, port, err := parseCommandLine()
+	initialRate, port, batchSize, err := parseCommandLine()
 
 	if nil != err {
 		fmt.Println()
@@ -30,7 +30,7 @@ func main() {
 	limiter := make(chan unit)
 	updater := make(chan float64)
 
-	go readFromStdIn(stream, limiter)
+	go readFromStdIn(stream, limiter, batchSize)
 
 	go rateLimit(limiter, updater, initialRate)
 
@@ -39,9 +39,10 @@ func main() {
 	writeToStdOut(stream)
 }
 
-func parseCommandLine() (initialRate float64, port *int, err error) {
+func parseCommandLine() (initialRate float64, port *int, batchSize *int, err error) {
 
 	port = flag.Int("port", 0, "port to listen for rate changes")
+	batchSize = flag.Int("batchsize", 1, "items in each batch")
 
 	flag.Parse()
 
@@ -62,19 +63,21 @@ func parseCommandLine() (initialRate float64, port *int, err error) {
 	return
 }
 
-func readFromStdIn(stream chan string, limiter chan unit) {
+func readFromStdIn(stream chan string, limiter chan unit, batchSize *int) {
 	in := bufio.NewReader(os.Stdin)
 
 	for {
 		<-limiter
 
-		line, err := in.ReadString('\n')
+		for i := 0; i < *batchSize; i++ {
+			line, err := in.ReadString('\n')
 
-		stream <- line
+			stream <- line
 
-		if io.EOF == err {
-			close(stream)
-			return
+			if io.EOF == err {
+				close(stream)
+				return
+			}
 		}
 	}
 }
