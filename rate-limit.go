@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"math"
@@ -11,6 +10,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	flag "github.com/ogier/pflag"
 )
 
 type unit interface{}
@@ -50,14 +51,14 @@ func parseCommandLine() (initialRate float64, port *int, batchSize *int, err err
 
 	if str == "" {
 		err = errors.New("must specify an initial rate")
-		flag.PrintDefaults()
+		flag.Usage()
 		return
 	}
 
 	initialRate, err = strconv.ParseFloat(str, 64)
 
 	if nil != err {
-		flag.PrintDefaults()
+		flag.Usage()
 	}
 
 	return
