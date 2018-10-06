@@ -3,6 +3,7 @@
 *.dll
 *.so
 *.dylib
+rate-limit
 
 # Test binary, build with `go test -c`
 *.test
